@@ -3,23 +3,23 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public class Server {
-    int cnt = 0;
-    boolean threadStarted = false;
-    public void startServer() {
-        Thread[] threadPool = new Thread[64];
+    private boolean threadStarted = false;
 
-        try (final var serverSocket = new ServerSocket(9999)) {
+    public void listen(int port) {
+        Thread[] threadPool = new Thread[64];
+        int cnt = 0;
+
+        try (final var serverSocket = new ServerSocket(port)) {
             while (true) {
                 if (cnt < 64 && !threadStarted) {
                     threadPool[cnt] = new Thread(() -> {
-                        createConnection(serverSocket);
+                        listenProcessing(serverSocket);
                     });
                     threadStarted = true;
                     threadPool[cnt++].start();
@@ -31,15 +31,14 @@ public class Server {
         }
     }
 
-    private void createConnection(ServerSocket serverSocket) {
+    private void listenProcessing(ServerSocket serverSocket) {
         final var validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html", "/styles.css",
                 "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
-
-        while(true) {
+        while (true) {
             try (
                     final var socket = serverSocket.accept();
                     final var in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    final var out = new BufferedOutputStream(socket.getOutputStream());
+                    final var out = new BufferedOutputStream(socket.getOutputStream())
             ) {
                 // read only request line for simplicity
                 // must be in form GET /path HTTP/1.1
